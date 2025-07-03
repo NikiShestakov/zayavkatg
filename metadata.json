@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Telegram Profile Collector",
+  "description": "A mini-app for collecting user profiles. Users submit unstructured text about themselves, and the app uses AI to parse it into a structured format for an admin panel.",
+  "requestFramePermissions": []
+}
