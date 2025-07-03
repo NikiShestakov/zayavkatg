@@ -1,12 +1,12 @@
-
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 // Создаем пул соединений с базой данных
+// Vercel Postgres автоматически предоставит переменную окружения POSTGRES_URL
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
   // Добавляем таймауты для предотвращения зависаний
   connectionTimeoutMillis: 10000, // 10 секунд на подключение
   idleTimeoutMillis: 30000,       // 30 секунд на неактивное соединение в пуле
@@ -17,6 +17,9 @@ export const initDb = async () => {
   const client = await pool.connect();
   try {
     console.log('🐘 Connected to PostgreSQL database.');
+
+    // Создаем расширение, если его нет (для gen_random_uuid())
+    await client.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
 
     // Создаем таблицу для анкет, если она не существует
     await client.query(`
@@ -42,13 +45,10 @@ export const initDb = async () => {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
         type VARCHAR(10) NOT NULL, -- 'image' или 'video'
-        url VARCHAR(255) NOT NULL -- Путь к файлу на сервере
+        url TEXT NOT NULL -- URL из облачного хранилища (может быть длинным)
       );
     `);
     
-    // Создаем расширение, если его нет (для gen_random_uuid())
-    await client.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
-
     console.log('📖 Database tables are ready.');
   } catch (err) {
     console.error('❌ Error initializing database:', err);

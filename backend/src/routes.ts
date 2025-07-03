@@ -1,28 +1,20 @@
-import express from 'express';
+import { Router } from 'express';
 import multer from 'multer';
-import path from 'path';
 import * as controllers from './controllers';
 
-const router = express.Router();
+const router = Router();
 
-// Настройка Multer для хранения файлов
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // __dirname - текущая директория (dist), выходим из нее и заходим в uploads
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    // Генерируем уникальное имя файла
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  },
+// Настройка Multer для хранения файлов в памяти.
+// Файлы будут переданы в контроллер в виде буферов и загружены в облачное хранилище.
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // Ограничение 10 МБ на файл
 });
-
-const upload = multer({ storage });
 
 // Маршруты API
 router.get('/profiles', controllers.getProfiles);
-router.post('/profiles', upload.array('media'), controllers.createProfile); // `media` - имя поля в FormData
+router.post('/profiles', upload.array('media', 10), controllers.createProfile); // `media` - имя поля, до 10 файлов
 router.put('/profiles/:id', controllers.updateProfile);
 router.delete('/profiles/:id', controllers.deleteProfile);
 
